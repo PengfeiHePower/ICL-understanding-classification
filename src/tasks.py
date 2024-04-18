@@ -169,7 +169,7 @@ class LinearClassification(LinearRegression):
     def get_training_metric():
         return cross_entropy
     
-    def generate_true_y(self, xs_b):
+    def generate_true_y(self, xs_b, prob1=1, prob2=1):
         b_size, n_points, _ = xs_b.shape
         split_index = n_points // 2
         true_y = torch.full((b_size, n_points), -1, device=xs_b.device)  # Ensure true_y is on the same device as xs_b

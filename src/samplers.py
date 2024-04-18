@@ -60,9 +60,10 @@ class GaussianSampler(DataSampler):
 
 
 class MixGaussianSampler(DataSampler):
-    def __init__(self, n_dims, bias=0.5, scale=None):
+    def __init__(self, n_dims, bias=1, scale=None):
         super().__init__(n_dims)
-        self.bias = torch.normal(mean=bias, std=1.0, size=(1, n_dims))
+        self.bias1 = torch.normal(mean=bias, std=1.0, size=(1, n_dims))
+        self.bias2 = torch.normal(mean=(-1*bias), std=1.0, size=(1, n_dims))
         self.scale = scale
 
     def sample_xs(self, n_points, b_size, n_dims_truncated=None, seeds=None):
@@ -77,10 +78,10 @@ class MixGaussianSampler(DataSampler):
                 xs_b[i] = torch.randn(n_points, self.n_dims, generator=generator)
         if self.scale is not None:
             xs_b = xs_b @ self.scale
-        if self.bias is not None:
+        if self.bias1 is not None:
             split_index = n_points // 2
-            xs_b[:, :split_index, :] += self.bias
-            xs_b[:, split_index:, :] -= self.bias
+            xs_b[:, :split_index, :] += self.bias1
+            xs_b[:, split_index:, :] += self.bias2
         if n_dims_truncated is not None:
             xs_b[:, :, n_dims_truncated:] = 0
         return xs_b

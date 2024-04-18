@@ -3,8 +3,8 @@ inherit:
     - wandb.yaml
 
 model:
-    n_dims: 5
-    n_positions: 11
+    n_dims: 20
+    n_positions: 101
 
 training:
     task: linear_classification
@@ -14,20 +14,20 @@ training:
     learning_rate: 0.0001
     save_every_steps: 1000
     keep_every_steps: 100000
-    train_steps: 5001
+    train_steps: 50001
     curriculum:
         dims:
             start: 5
-            end: 5
+            end: 20
             inc: 1
-            interval: 2000
+            interval: 200
         points:
             start: 11
-            end: 11
+            end: 101
             inc: 2
-            interval: 2000
+            interval: 200
 
-out_dir: ../models/linear_classification_mix_gaussian
+out_dir: ../models/linear_classification
 
 wandb:
-    name: "linear_classification_mix_gaussian"
+    name: "linear_classification"

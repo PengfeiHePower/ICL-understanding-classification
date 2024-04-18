@@ -18,6 +18,17 @@ import wandb
 
 torch.backends.cudnn.benchmark = True
 
+def shuffle_within_batch(xs, ys):
+    b_size, n_points, _ = xs.shape
+    # Generate a random permutation for each batch
+    permutations = torch.randperm(n_points).repeat(b_size, 1)
+
+    # Apply the same permutation to each batch in xs and ys
+    xs_shuffled = torch.gather(xs, 1, permutations.unsqueeze(-1).expand(-1, -1, xs.size(2)))
+    ys_shuffled = torch.gather(ys, 1, permutations)
+
+    return xs_shuffled, ys_shuffled
+
 
 def train_step(model, xs, ys, optimizer, loss_func):
     optimizer.zero_grad()
@@ -60,10 +71,13 @@ def train(model, args):
         **args.training.task_kwargs,
     )
     pbar = tqdm(range(starting_step, args.training.train_steps))
+    # print(f"pbar:{pbar}")
 
     num_training_examples = args.training.num_training_examples
 
     for i in pbar:
+        # print(f"i:{i}")
+        # print(f"curriculum.n_points:{curriculum.n_points}")
         data_sampler_args = {}
         task_sampler_args = {}
 
@@ -82,8 +96,17 @@ def train(model, args):
             **data_sampler_args,
         )
         task = task_sampler(**task_sampler_args)
-        ys = task.generate_true_y(xs)
-        # ys = task.evaluate(xs)
+        # ys = task.generate_true_y(xs)
+        # xs, ys = shuffle_within_batch(xs, ys)
+        
+        # print(f"xs[0,:,:]:{xs[0,:,:]}")
+        # print(f"ys[0,:]:{ys[0,:]}")
+        # print(f"xs shape:{xs.shape}")
+        # print(f"ys shape: {ys.shape}")
+        # exit(0)
+        ys = task.evaluate(xs)
+        # print(f"xs shape:{xs.shape}")
+        # print(f"ys shape:{ys.shape}")
 
         loss_func = task.get_training_metric()
 
