@@ -60,7 +60,7 @@ class GaussianSampler(DataSampler):
 
 
 class MixGaussianSampler(DataSampler):
-    def __init__(self, n_dims, bias=1, scale=None):
+    def __init__(self, n_dims, bias=0.5, scale=None):
         super().__init__(n_dims)
         self.bias1 = torch.normal(mean=bias, std=1.0, size=(1, n_dims))
         self.bias2 = torch.normal(mean=(-1*bias), std=1.0, size=(1, n_dims))

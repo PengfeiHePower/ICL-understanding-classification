@@ -96,15 +96,15 @@ def train(model, args):
             **data_sampler_args,
         )
         task = task_sampler(**task_sampler_args)
-        # ys = task.generate_true_y(xs)
-        # xs, ys = shuffle_within_batch(xs, ys)
+        ys = task.generate_true_y(xs)
+        xs, ys = shuffle_within_batch(xs, ys)
         
         # print(f"xs[0,:,:]:{xs[0,:,:]}")
         # print(f"ys[0,:]:{ys[0,:]}")
         # print(f"xs shape:{xs.shape}")
         # print(f"ys shape: {ys.shape}")
         # exit(0)
-        ys = task.evaluate(xs)
+        # ys = task.evaluate(xs)
         # print(f"xs shape:{xs.shape}")
         # print(f"ys shape:{ys.shape}")
 

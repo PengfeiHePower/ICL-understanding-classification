@@ -43,7 +43,7 @@ print(f"device:{device}")
 
 
 task = "linear_classification"
-run_id = "pretrained2"  # if you train more models, replace with the run_id from the table above
+run_id = "pretrained1"  # if you train more models, replace with the run_id from the table above
 run_path = os.path.join(run_dir, task, run_id)
 
 print(f"Load model..")
