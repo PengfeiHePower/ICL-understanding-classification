@@ -14,6 +14,7 @@ from plot_utils import basic_plot, collect_results, relevant_model_names
 from tasks import get_task_sampler
 
 from scipy import stats
+import random
 
 # %matplotlib inline
 # %load_ext autoreload
@@ -43,7 +44,7 @@ print(f"device:{device}")
 
 
 task = "linear_classification"
-run_id = "pretrained1"  # if you train more models, replace with the run_id from the table above
+run_id = "pretrained3"  # if you train more models, replace with the run_id from the table above
 run_path = os.path.join(run_dir, task, run_id)
 
 print(f"Load model..")
@@ -52,7 +53,8 @@ model.to(device)
 
 
 n_dims = conf.model.n_dims
-batch_size = conf.training.batch_size
+# batch_size = conf.training.batch_size
+batch_size = 100
 
 # data_sampler = get_data_sampler(conf.training.data, n_dims)
 task_sampler = get_task_sampler(
@@ -129,7 +131,9 @@ def testSample(n_points, b_size, bias1, bias2, std, p1,p2,frac_pos):
     return xs_b, true_y
 
 
-def testF(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos, model, rep=100):
+def testF(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos, model, rep=1000):
+
+    random.seed(10)
     pos_pos_ls = []
     neg_neg_ls = []
     

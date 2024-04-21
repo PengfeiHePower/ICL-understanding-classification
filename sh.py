@@ -22,3 +22,7 @@ CUDA_VISIBLE_DEVICE=1 python infer.py -n_points 100 -bias1 2 -bias2 -0 -std 1 -p
 CUDA_VISIBLE_DEVICE=1 python infer.py -n_points 100 -bias1 2 -bias2 1 -std 1 -p1 1.0 -p2 1.0 -frac_pos 0
 
 CUDA_VISIBLE_DEVICE=1 python infer.py -n_points 100 -bias1 -1 -bias2 1 -std 1 -p1 1.0 -p2 1.0 -frac_pos 0.9
+
+CUDA_VISIBLE_DEVICE=1 python infer.py -n_points 100 -bias1 0.5 -bias2 -0.5 -std 1.0 -p1 1.0 -p2 1.0 -frac_pos 0.5
+
+CUDA_VISIBLE_DEVICE=1 python infer.py -n_points 100 -bias1 -0.5 -bias2 0.5 -std 1.0 -p1 1.0 -p2 1.0 -frac_pos 0
