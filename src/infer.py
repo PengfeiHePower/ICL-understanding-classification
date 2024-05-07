@@ -32,9 +32,10 @@ parser.add_argument('-n_points', type=int)
 parser.add_argument('-bias1', type=float)
 parser.add_argument('-bias2', type=float)
 parser.add_argument('-std', type=float)
-parser.add_argument('-p1', type=float)
-parser.add_argument('-p2', type=float)
+# parser.add_argument('-p1', type=float)
+# parser.add_argument('-p2', type=float)
 parser.add_argument('-frac_pos', type=float)
+parser.add_argument('-run_id', default='pretrained4')
 
 args = parser.parse_args()
 print(f"args:{args}")
@@ -44,7 +45,7 @@ print(f"device:{device}")
 
 
 task = "linear_classification"
-run_id = "pretrained3"  # if you train more models, replace with the run_id from the table above
+run_id = args.run_id  # if you train more models, replace with the run_id from the table above
 run_path = os.path.join(run_dir, task, run_id)
 
 print(f"Load model..")
@@ -78,29 +79,81 @@ def shuffle_within_batch(xs, ys):
     return xs_shuffled, ys_shuffled
 
 ## generate inference data
-def testSample(n_points, b_size, bias1, bias2, std, p1,p2,frac_pos):
+# def testSample(n_points, b_size, bias1, bias2, std, p1,p2,frac_pos):
+#     x_bias1 = torch.normal(mean=bias1, std=std, size=(1, n_dims))
+#     x_bias2 = torch.normal(mean=bias2, std=std, size=(1, n_dims))
+#     split_index = int(n_points * frac_pos)
+#     if n_points>0:
+#         ## first obtain in-context examples
+#         xs_b = torch.randn(b_size, n_points, n_dims)
+#         xs_b[:, :split_index, :] += x_bias1
+#         xs_b[:, split_index:, :] += x_bias2
+        
+#         true_y = torch.empty(b_size, n_points)
+#         probs_first_half = torch.tensor([p1, 1-p1])  # Probability for 1 and -1 respectively
+#         choices_first_half = torch.tensor([1, -1])
+#         if split_index>0:
+#             first_half = torch.multinomial(probs_first_half, b_size * split_index, replacement=True).reshape(b_size, split_index)
+#             true_y[:, :split_index] = choices_first_half[first_half]
+#         probs_second_half = torch.tensor([1-p2, p2])  # Probability for 1 and -1 respectively
+#         choices_second_half = torch.tensor([1, -1])
+#         if n_points - split_index>0:
+#             second_half = torch.multinomial(probs_second_half, b_size * (n_points - split_index), replacement=True).reshape(b_size, n_points - split_index)
+#             true_y[:, split_index:] = choices_second_half[second_half]
+#         #shuffle examples
+#         xs_b, true_y = shuffle_within_batch(xs_b, true_y)
+        
+#         ## add query samples
+#         split_batch = b_size // 2
+#         additional_first_half = torch.randn(split_batch, 1, n_dims) 
+#         additional_first_half += x_bias1
+#         additional_second_half = torch.randn(b_size - split_batch, 1, n_dims) 
+#         additional_second_half += x_bias2
+#         additional_points = torch.cat([additional_first_half, additional_second_half], dim=0)
+#         xs_b = torch.cat([xs_b, additional_points], dim=1)
+        
+#         additional_first_half = torch.ones((split_batch, 1))
+#         additional_second_half = -torch.ones((b_size - split_batch, 1))
+#         additional_labels = torch.cat([additional_first_half, additional_second_half], dim=0)
+#         true_y = torch.cat([true_y, additional_labels], dim=1)
+    
+#     else:
+#         #zero-shot, only query samples
+#         split_batch = b_size // 2
+#         additional_first_half = torch.randn(split_batch, 1, n_dims) 
+#         additional_first_half += x_bias1
+#         additional_second_half = torch.randn(b_size - split_batch, 1, n_dims) 
+#         additional_second_half += x_bias2
+#         xs_b = torch.cat([additional_first_half, additional_second_half], dim=0)
+#         additional_first_half = torch.ones((split_batch, 1))
+#         additional_second_half = -torch.ones((b_size - split_batch, 1))
+#         true_y = torch.cat([additional_first_half, additional_second_half], dim=0)
+    
+#     return xs_b, true_y
+
+def testSample(n_points, b_size, bias1, bias2, std, p1,p2, frac_pos):
     x_bias1 = torch.normal(mean=bias1, std=std, size=(1, n_dims))
     x_bias2 = torch.normal(mean=bias2, std=std, size=(1, n_dims))
-    split_index = int(n_points * frac_pos)
     if n_points>0:
         ## first obtain in-context examples
-        xs_b = torch.randn(b_size, n_points, n_dims)
-        xs_b[:, :split_index, :] += x_bias1
-        xs_b[:, split_index:, :] += x_bias2
-        
-        true_y = torch.empty(b_size, n_points)
-        probs_first_half = torch.tensor([p1, 1-p1])  # Probability for 1 and -1 respectively
-        choices_first_half = torch.tensor([1, -1])
-        if split_index>0:
-            first_half = torch.multinomial(probs_first_half, b_size * split_index, replacement=True).reshape(b_size, split_index)
-            true_y[:, :split_index] = choices_first_half[first_half]
-        probs_second_half = torch.tensor([1-p2, p2])  # Probability for 1 and -1 respectively
-        choices_second_half = torch.tensor([1, -1])
-        if n_points - split_index>0:
-            second_half = torch.multinomial(probs_second_half, b_size * (n_points - split_index), replacement=True).reshape(b_size, n_points - split_index)
-            true_y[:, split_index:] = choices_second_half[second_half]
-        #shuffle examples
-        xs_b, true_y = shuffle_within_batch(xs_b, true_y)
+        y = torch.zeros((b_size, n_points), dtype=torch.int32)
+        x = torch.randn(b_size, n_points, n_dims)
+        split_index = int(n_points * frac_pos)
+        if split_index > 0:
+            y[:, :split_index] = 1
+            pos_pos_num = int(split_index*p1)
+            if pos_pos_num>0:
+                x[:,:pos_pos_num,:]+=x_bias1
+            if split_index-pos_pos_num>0:
+                x[:,pos_pos_num:split_index,:]+=x_bias2
+        if n_points-split_index>0:
+            y[:, split_index:] = -1
+            neg_pos_num = int(p2*(n_points-split_index))
+            if neg_pos_num>0:
+                x[:,split_index:(split_index+neg_pos_num),:]+=x_bias2
+            if n_points-split_index-neg_pos_num>0:
+                x[:,(split_index+neg_pos_num):, :]+=x_bias1
+        x, y = shuffle_within_batch(x, y)
         
         ## add query samples
         split_batch = b_size // 2
@@ -109,12 +162,12 @@ def testSample(n_points, b_size, bias1, bias2, std, p1,p2,frac_pos):
         additional_second_half = torch.randn(b_size - split_batch, 1, n_dims) 
         additional_second_half += x_bias2
         additional_points = torch.cat([additional_first_half, additional_second_half], dim=0)
-        xs_b = torch.cat([xs_b, additional_points], dim=1)
+        x = torch.cat([x, additional_points], dim=1)
         
         additional_first_half = torch.ones((split_batch, 1))
         additional_second_half = -torch.ones((b_size - split_batch, 1))
         additional_labels = torch.cat([additional_first_half, additional_second_half], dim=0)
-        true_y = torch.cat([true_y, additional_labels], dim=1)
+        y = torch.cat([y, additional_labels], dim=1)
     
     else:
         #zero-shot, only query samples
@@ -123,12 +176,13 @@ def testSample(n_points, b_size, bias1, bias2, std, p1,p2,frac_pos):
         additional_first_half += x_bias1
         additional_second_half = torch.randn(b_size - split_batch, 1, n_dims) 
         additional_second_half += x_bias2
-        xs_b = torch.cat([additional_first_half, additional_second_half], dim=0)
+        x = torch.cat([additional_first_half, additional_second_half], dim=0)
         additional_first_half = torch.ones((split_batch, 1))
         additional_second_half = -torch.ones((b_size - split_batch, 1))
-        true_y = torch.cat([additional_first_half, additional_second_half], dim=0)
+        y = torch.cat([additional_first_half, additional_second_half], dim=0)
     
-    return xs_b, true_y
+    return x,y
+    
 
 
 def testF(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos, model, rep=1000):
@@ -174,8 +228,37 @@ def testF(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos, model, rep=1000
     
     return [pos_pos_avg, 1-pos_pos_avg], [1-neg_neg_avg, neg_neg_avg], [pos_pos_mar, neg_neg_mar]
 
-dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=args.p1, p2=args.p2, frac_pos=args.frac_pos, model=model, rep=100)
-print(f"dist_pos:{dist_pos}")
-print(f"dist_neg:{dist_neg}")
-print(f"CI margin:{mar}")
-print(f"Done.")
+
+# p1_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
+p2_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
+p1_list=[0.0]
+# p2_list = [0.0]
+
+# p1_list = [1.0,0.9]
+# p2_list = [1.0,0.9]
+
+df_pos = pd.DataFrame(index=p1_list, columns=p2_list)
+df_neg = pd.DataFrame(index=p1_list, columns=p2_list)
+
+for p1 in p1_list:
+    for p2 in p2_list:
+        dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=p1, p2=p2, frac_pos=args.frac_pos, model=model, rep=100)
+        print(f"p1:{p1},p2:{p2},dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
+        df_pos.at[p1,p2]=dist_pos[0]
+        df_neg.at[p1,p2]=dist_neg[1]
+
+save_dir = "results/"+run_id
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+    
+df_pos.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_pos.csv"))
+df_neg.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_neg.csv"))
+print('Done.')
+
+        
+
+# dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=args.p1, p2=args.p2, frac_pos=args.frac_pos, model=model, rep=100)
+# print(f"dist_pos:{dist_pos}")
+# print(f"dist_neg:{dist_neg}")
+# print(f"CI margin:{mar}")
+# print(f"Done.")

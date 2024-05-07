@@ -15,19 +15,19 @@ from schema import schema
 from models import build_model
 
 import wandb
+import random
 
 torch.backends.cudnn.benchmark = True
 
 def shuffle_within_batch(xs, ys):
     b_size, n_points, _ = xs.shape
     # Generate a random permutation for each batch
-    permutations = torch.randperm(n_points).repeat(b_size, 1)
+    for i in range(b_size):
+        permutations = torch.randperm(n_points)
+        xs[i,:,:] = xs[i,permutations,:]
+        ys[i,:] = ys[i,permutations]
 
-    # Apply the same permutation to each batch in xs and ys
-    xs_shuffled = torch.gather(xs, 1, permutations.unsqueeze(-1).expand(-1, -1, xs.size(2)))
-    ys_shuffled = torch.gather(ys, 1, permutations)
-
-    return xs_shuffled, ys_shuffled
+    return xs, ys
 
 
 def train_step(model, xs, ys, optimizer, loss_func):
@@ -62,7 +62,7 @@ def train(model, args):
 
     n_dims = model.n_dims
     bsize = args.training.batch_size
-    data_sampler = get_data_sampler(args.training.data, n_dims=n_dims)
+    # data_sampler = get_data_sampler(args.training.data, n_dims=n_dims)
     task_sampler = get_task_sampler(
         args.training.task,
         n_dims,
@@ -78,6 +78,7 @@ def train(model, args):
     for i in pbar:
         # print(f"i:{i}")
         # print(f"curriculum.n_points:{curriculum.n_points}")
+        data_sampler = get_data_sampler(args.training.data, n_dims=n_dims)
         data_sampler_args = {}
         task_sampler_args = {}
 
@@ -88,22 +89,26 @@ def train(model, args):
             seeds = sample_seeds(num_training_examples, bsize)
             data_sampler_args["seeds"] = seeds
             task_sampler_args["seeds"] = [s + 1 for s in seeds]
+        
+        # frac_pos = random.uniform(0,1)
+        frac_pos = 0.8
 
         xs = data_sampler.sample_xs(
             curriculum.n_points,
             bsize,
             curriculum.n_dims_truncated,
+            frac_pos = frac_pos,
             **data_sampler_args,
         )
         task = task_sampler(**task_sampler_args)
-        ys = task.generate_true_y(xs)
-        # xs, ys = shuffle_within_batch(xs, ys)
+        ys = task.generate_true_y(xs,frac_pos = frac_pos)
+        xs, ys = shuffle_within_batch(xs, ys)
         
-        print(f"xs[0,:,:]:{xs[0,:,:]}")
-        print(f"ys[0,:]:{ys[0,:]}")
+        # print(f"xs[0,:,:]:{xs[0,:,:]}")
+        # print(f"ys[0,:]:{ys[0,:]}")
         # print(f"xs shape:{xs.shape}")
         # print(f"ys shape: {ys.shape}")
-        exit(0)
+        # exit(0)
         # ys = task.evaluate(xs)
         # print(f"xs shape:{xs.shape}")
         # print(f"ys shape:{ys.shape}")
