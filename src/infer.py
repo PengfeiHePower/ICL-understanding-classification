@@ -241,7 +241,8 @@ def testF(n_points, b_size, bias1, bias2, std, std_x, p1, p2, frac_pos, model, r
 # p2_list = [0.0]
 
 # frac_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
-k = [1,2,3,4,5,6,7,8,9,10,20,50,80,100]
+# frac_list = [0.5]
+k = [0,1,2,3,4,5,6,7,8,9,10,20,50,80,100]
 
 # p1_list = [1.0,0.9]
 # p2_list = [1.0,0.9]
@@ -268,6 +269,7 @@ std_x = args.var_x ** 0.5
 for n_points in k:
     dist_pos, dist_neg, mar = testF(n_points=n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, std_x=std_x, p1=1.0, p2=1.0, frac_pos=0.5, model=model, rep=100)
     print(f"n_points:{n_points}, dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
+    # exit(0)
     df.at[n_points,'positive']=dist_pos[0]
     df.at[n_points,'negative']=dist_neg[1]
 
@@ -279,7 +281,7 @@ if not os.path.exists(save_dir):
     
 # df_pos.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_pos.csv"))
 # df_neg.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_neg.csv"))
-df.to_csv(os.path.join(save_dir, "clean0.5-0.5_"+"_varianceX"+str(args.var_x)+".csv"))
+df.to_csv(os.path.join(save_dir, "earlydescent0.5-0.5_"+"_varX"+str(args.var_x)+".csv"))
 # df_neg.to_csv(os.path.join(save_dir, "contradtci-0.50.5_"+"_fewshot"+str(args.n_points)+"_neg.csv"))
 
 print('Done.')
