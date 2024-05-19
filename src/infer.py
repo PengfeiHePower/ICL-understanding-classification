@@ -32,10 +32,11 @@ parser.add_argument('-n_points', type=int)
 parser.add_argument('-bias1', type=float)
 parser.add_argument('-bias2', type=float)
 parser.add_argument('-std', type=float)
-# parser.add_argument('-p1', type=float)
-# parser.add_argument('-p2', type=float)
+parser.add_argument('-p1', type=float)
+parser.add_argument('-p2', type=float)
 parser.add_argument('-frac_pos', type=float)
 parser.add_argument('-run_id', default='pretrained4')
+parser.add_argument('-var_x', type=float)
 
 args = parser.parse_args()
 print(f"args:{args}")
@@ -131,13 +132,13 @@ def shuffle_within_batch(xs, ys):
     
 #     return xs_b, true_y
 
-def testSample(n_points, b_size, bias1, bias2, std, p1,p2, frac_pos):
+def testSample(n_points, b_size, bias1, bias2, std, std_x, p1,p2, frac_pos):
     x_bias1 = torch.normal(mean=bias1, std=std, size=(1, n_dims))
     x_bias2 = torch.normal(mean=bias2, std=std, size=(1, n_dims))
     if n_points>0:
         ## first obtain in-context examples
         y = torch.zeros((b_size, n_points), dtype=torch.int32)
-        x = torch.randn(b_size, n_points, n_dims)
+        x = torch.randn(b_size, n_points, n_dims) * std_x
         split_index = int(n_points * frac_pos)
         if split_index > 0:
             y[:, :split_index] = 1
@@ -185,7 +186,7 @@ def testSample(n_points, b_size, bias1, bias2, std, p1,p2, frac_pos):
     
 
 
-def testF(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos, model, rep=1000):
+def testF(n_points, b_size, bias1, bias2, std, std_x, p1, p2, frac_pos, model, rep=1000):
 
     random.seed(10)
     pos_pos_ls = []
@@ -193,8 +194,13 @@ def testF(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos, model, rep=1000
     
     for i in range(rep):
         # print(f"Rep:{i}")
-        xs, ys = testSample(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos)
+        xs, ys = testSample(n_points, b_size, bias1, bias2, std,std_x, p1, p2, frac_pos)
         xs, ys = xs.to(device), ys.to(device)
+        
+        # print(f"xs:{xs}")
+        # print(f"ys:{ys}")
+        # exit(0)
+        
         
         with torch.no_grad():
             pred = model(xs, ys).sign()
@@ -230,29 +236,52 @@ def testF(n_points, b_size, bias1, bias2, std, p1, p2, frac_pos, model, rep=1000
 
 
 # p1_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
-p2_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
-p1_list=[0.0]
+# p2_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
+# p1_list=[0.0]
 # p2_list = [0.0]
+
+# frac_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
+k = [1,2,3,4,5,6,7,8,9,10,20,50,80,100]
 
 # p1_list = [1.0,0.9]
 # p2_list = [1.0,0.9]
 
-df_pos = pd.DataFrame(index=p1_list, columns=p2_list)
-df_neg = pd.DataFrame(index=p1_list, columns=p2_list)
+# df_pos = pd.DataFrame(index=p1_list, columns=p2_list)
+# df_neg = pd.DataFrame(index=p1_list, columns=p2_list)
+df = pd.DataFrame(index=k, columns=['positive', 'negative'])
 
-for p1 in p1_list:
-    for p2 in p2_list:
-        dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=p1, p2=p2, frac_pos=args.frac_pos, model=model, rep=100)
-        print(f"p1:{p1},p2:{p2},dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
-        df_pos.at[p1,p2]=dist_pos[0]
-        df_neg.at[p1,p2]=dist_neg[1]
+
+# for p1 in p1_list:
+#     for p2 in p2_list:
+#         dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=p1, p2=p2, frac_pos=args.frac_pos, model=model, rep=100)
+#         print(f"p1:{p1},p2:{p2},dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
+#         df_pos.at[p1,p2]=dist_pos[0]
+#         df_neg.at[p1,p2]=dist_neg[1]
+
+# for frac in frac_list:
+#     dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=1.0, p2=1.0, frac_pos=frac, model=model, rep=100)
+#     print(f"frac:{frac}, dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
+#     df_pos.at[frac,'dist']=dist_pos[0]
+#     df_neg.at[frac,'dist']=dist_neg[1]
+std_x = args.var_x ** 0.5
+
+for n_points in k:
+    dist_pos, dist_neg, mar = testF(n_points=n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, std_x=std_x, p1=1.0, p2=1.0, frac_pos=0.5, model=model, rep=100)
+    print(f"n_points:{n_points}, dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
+    df.at[n_points,'positive']=dist_pos[0]
+    df.at[n_points,'negative']=dist_neg[1]
+
+    
 
 save_dir = "results/"+run_id
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
     
-df_pos.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_pos.csv"))
-df_neg.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_neg.csv"))
+# df_pos.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_pos.csv"))
+# df_neg.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_neg.csv"))
+df.to_csv(os.path.join(save_dir, "clean0.5-0.5_"+"_varianceX"+str(args.var_x)+".csv"))
+# df_neg.to_csv(os.path.join(save_dir, "contradtci-0.50.5_"+"_fewshot"+str(args.n_points)+"_neg.csv"))
+
 print('Done.')
 
         

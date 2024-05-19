@@ -90,8 +90,8 @@ def train(model, args):
             data_sampler_args["seeds"] = seeds
             task_sampler_args["seeds"] = [s + 1 for s in seeds]
         
-        # frac_pos = random.uniform(0,1)
-        frac_pos = 0.8
+        frac_pos = random.uniform(0,1)
+        # frac_pos = 0.5
 
         xs = data_sampler.sample_xs(
             curriculum.n_points,

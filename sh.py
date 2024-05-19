@@ -32,3 +32,5 @@ python infer.py -n_points 100 -bias1 -0.5 -bias2 0.5 -std 1.0 -p1 1.0 -p2 1.0 -f
 CUDA_VISIBLE_DEVICE=2 python infer.py -n_points 100 -bias1 1 -bias2 -1 -std 1.0 -p1 1.0 -p2 1.0 -frac_pos 0.5
 
 CUDA_VISIBLE_DEVICE=3 python infer.py -n_points 100 -bias1 -1 -bias2 1 -std 1.0 -p1 1.0 -p2 1.0 -frac_pos 0.5
+
+python infer.py -bias1 -0.5 -bias2 0.5 -std 1.0 -p1 1.0 -p2 1.0 -frac_pos 0.5 -var_x 0.5
