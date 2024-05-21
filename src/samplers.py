@@ -4,6 +4,8 @@ import torch
 
 import random
 
+import numpy as np
+
 class DataSampler:
     def __init__(self, n_dims):
         self.n_dims = n_dims
@@ -83,12 +85,13 @@ class MixGaussianSampler(DataSampler):
         if self.bias1 is not None:
             if n_points == 1:
                 random_number = random.uniform(0, 1)
-                if random_number>.5:
+                if random_number>frac_pos:
                     xs_b += self.bias1
                 else:
                     xs_b += self.bias2
             else:
-                split_index = int(n_points * frac_pos)
+                split_index = np.random.binomial(n_points, frac_pos, 1)[0] # for independent train
+                # split_index = int(n_points * frac_pos)
                 xs_b[:, :split_index, :] += self.bias1
                 xs_b[:, split_index:, :] += self.bias2
         if n_dims_truncated is not None:

@@ -234,6 +234,7 @@ def testF(n_points, b_size, bias1, bias2, std, std_x, p1, p2, frac_pos, model, r
     
     return [pos_pos_avg, 1-pos_pos_avg], [1-neg_neg_avg, neg_neg_avg], [pos_pos_mar, neg_neg_mar]
 
+std_x = args.var_x ** 0.5
 
 # p1_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
 # p2_list = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0.0]
@@ -254,17 +255,16 @@ df = pd.DataFrame(index=k, columns=['positive', 'negative'])
 
 # for p1 in p1_list:
 #     for p2 in p2_list:
-#         dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=p1, p2=p2, frac_pos=args.frac_pos, model=model, rep=100)
+#         dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2,std_x=std_x, std=args.std, p1=p1, p2=p2, frac_pos=args.frac_pos, model=model, rep=100)
 #         print(f"p1:{p1},p2:{p2},dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
 #         df_pos.at[p1,p2]=dist_pos[0]
 #         df_neg.at[p1,p2]=dist_neg[1]
 
 # for frac in frac_list:
-#     dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, p1=1.0, p2=1.0, frac_pos=frac, model=model, rep=100)
+#     dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std,std_x=std_x, p1=1.0, p2=1.0, frac_pos=frac, model=model, rep=100)
 #     print(f"frac:{frac}, dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
-#     df_pos.at[frac,'dist']=dist_pos[0]
-#     df_neg.at[frac,'dist']=dist_neg[1]
-std_x = args.var_x ** 0.5
+#     df.at[frac,'positive']=dist_pos[0]
+#     df.at[frac,'negative']=dist_neg[1]
 
 for n_points in k:
     dist_pos, dist_neg, mar = testF(n_points=n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std, std_x=std_x, p1=1.0, p2=1.0, frac_pos=0.5, model=model, rep=100)
@@ -279,9 +279,9 @@ save_dir = "results/"+run_id
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
     
-# df_pos.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_pos.csv"))
-# df_neg.to_csv(os.path.join(save_dir, "0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_neg.csv"))
-df.to_csv(os.path.join(save_dir, "earlydescent0.5-0.5_"+"_varX"+str(args.var_x)+".csv"))
+# df_pos.to_csv(os.path.join(save_dir, "labelnoise0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_pos.csv"))
+# df_neg.to_csv(os.path.join(save_dir, "labelnoise0.5-0.5_"+"frac"+str(args.frac_pos)+"_fewshot"+str(args.n_points)+"_neg.csv"))
+df.to_csv(os.path.join(save_dir, "early0.5-0.5_"+"_varX"+str(args.var_x)+".csv"))
 # df_neg.to_csv(os.path.join(save_dir, "contradtci-0.50.5_"+"_fewshot"+str(args.n_points)+"_neg.csv"))
 
 print('Done.')
