@@ -267,7 +267,7 @@ df = pd.DataFrame(index=frac_list, columns=['positive', 'negative'])
 #         df_neg.at[p1,p2]=dist_neg[1]
 
 for frac in frac_list:
-    dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std,std_x=std_x, p1=1.0, p2=1.0, frac_pos=frac, frac_pos_test=0.5, model=model, rep=100)
+    dist_pos, dist_neg, mar = testF(n_points=args.n_points, b_size=batch_size, bias1=args.bias1, bias2=args.bias2, std=args.std,std_x=std_x, p1=1.0, p2=1.0, frac_pos=frac, frac_pos_test=0.95, model=model, rep=100)
     print(f"frac:{frac}, dist_pos:{dist_pos},dist_neg:{dist_neg},CI margin:{mar}")
     df.at[frac,'positive']=dist_pos[0]
     df.at[frac,'negative']=dist_neg[1]
