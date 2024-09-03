@@ -6,6 +6,7 @@ from quinine import QuinineArgumentParser
 from tqdm import tqdm
 import torch
 import yaml
+import numpy as np
 
 from eval import get_run_metrics
 from tasks import get_task_sampler
@@ -74,6 +75,9 @@ def train(model, args):
     # print(f"pbar:{pbar}")
 
     num_training_examples = args.training.num_training_examples
+    
+    train_pos_acc=[]
+    train_neg_acc=[]
 
     for i in pbar:
         # print(f"i:{i}")
@@ -161,6 +165,42 @@ def train(model, args):
             and i > 0
         ):
             torch.save(model.state_dict(), os.path.join(args.out_dir, f"model_{i}.pt"))
+        
+        with torch.no_grad():
+            pred = model(xs.cuda(), ys.cuda()).sign()
+            pred = pred.cpu()
+        gt_label = ys[:, -1]
+        pred_label = pred[:, -1]
+        class_1_indices = (gt_label == 1)
+        class_neg1_indices = (gt_label == -1)
+        predicted_class_1 = pred_label[class_1_indices].numpy()
+        print(f"predicted_class_1:{predicted_class_1}")
+        predicted_class_neg1 = pred_label[class_neg1_indices].numpy()
+        print(f"predicted_class_neg1:{predicted_class_neg1}")
+        
+        # Accuracy for class 1
+        correct_class_1 = np.sum(predicted_class_1 == 1)
+        accuracy_class_1 = correct_class_1 / len(predicted_class_1) if len(predicted_class_1) > 0 else 0
+
+        # Accuracy for class -1
+        correct_class_neg1 = np.sum(predicted_class_neg1 == -1)
+        accuracy_class_neg1 = correct_class_neg1 / len(predicted_class_neg1) if len(predicted_class_neg1) > 0 else 0
+        
+        print(f"train pos acc:{accuracy_class_1}")
+        print(f"train neg acc:{accuracy_class_neg1}")
+        train_pos_acc.append(accuracy_class_1)
+        train_neg_acc.append(accuracy_class_neg1)
+        
+        save_path_pos = os.path.join(args.out_dir, 'posAcc.txt')
+        save_path_neg = os.path.join(args.out_dir, 'negAcc.txt')
+        np.savetxt(save_path_pos, np.array(train_pos_acc))
+        np.savetxt(save_path_neg, np.array(train_neg_acc))
+        
+        
+        
+
+        
+        
 
 
 def main(args):
